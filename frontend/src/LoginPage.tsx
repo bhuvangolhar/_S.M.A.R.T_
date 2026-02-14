@@ -11,7 +11,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup, onLoginSucc
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -26,40 +26,46 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup, onLoginSucc
       return;
     }
 
-    // Check if user exists in localStorage
-    const savedData = localStorage.getItem("userSignupData");
-    console.log("🔍 Checking for saved data...");
-    console.log("📦 LocalStorage contents:", savedData);
-    
-    if (!savedData) {
-      console.log("❌ No saved data found");
-      setError("No account found. Please sign up first");
-      return;
+    // Call backend API
+    try {
+      console.log("📡 Sending login request to backend...");
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("❌ Login failed:", data.error);
+        setError(data.error || "Login failed");
+        return;
+      }
+
+      // Save to localStorage for session
+      const userData = data.user;
+      localStorage.setItem("userSignupData", JSON.stringify({
+        fullName: userData.fullName,
+        organizationName: userData.organizationName,
+        email: userData.email,
+        mobileNo: userData.mobileNo,
+      }));
+      localStorage.setItem("userSession", JSON.stringify({ loggedIn: true, email: email }));
+      
+      console.log("✅ Login successful:", data.user);
+      setEmail("");
+      setPassword("");
+      onLoginSuccess();
+    } catch (error) {
+      console.error("❌ Login error:", error);
+      setError("Error connecting to server. Please try again.");
     }
-
-    const userData = JSON.parse(savedData);
-    console.log("✅ Found saved user data:", userData);
-
-    // Verify email and password
-    if (userData.email !== email) {
-      console.log("❌ Email mismatch. Expected:", userData.email, "Got:", email);
-      setError("Email not found. Please check and try again");
-      return;
-    }
-
-    if (userData.password !== password) {
-      console.log("❌ Password mismatch. Expected:", userData.password, "Got:", password);
-      setError("Incorrect password. Please try again");
-      return;
-    }
-
-    // Login successful - set session flag
-    localStorage.setItem("userSession", JSON.stringify({ loggedIn: true, email: email }));
-    console.log("✅ Login successful for:", email);
-    console.log("📦 Session set:", localStorage.getItem("userSession"));
-    setEmail("");
-    setPassword("");
-    onLoginSuccess();
   };
 
   return (

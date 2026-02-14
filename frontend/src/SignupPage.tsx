@@ -15,7 +15,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin, onSignupSu
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("🚀 Signup form submitted");
     console.log("Form data:", { fullName, organizationName, email, mobileNo, password, confirmPassword });
@@ -58,38 +58,58 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin, onSignupSu
       return;
     }
 
-    // Save to localStorage
-    const userData = {
-      fullName,
-      organizationName,
-      email,
-      mobileNo,
-      password,
-    };
-    
+    // Call backend API
     try {
+      console.log("📡 Sending signup request to backend...");
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          organizationName,
+          email,
+          mobileNo,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("❌ Signup failed:", data.error);
+        setError(data.error || "Signup failed");
+        return;
+      }
+
+      // Save to localStorage for session
+      const userData = {
+        fullName,
+        organizationName,
+        email,
+        mobileNo,
+        password,
+      };
       localStorage.setItem("userSignupData", JSON.stringify(userData));
       localStorage.setItem("userSession", JSON.stringify({ loggedIn: true, email: email }));
-      console.log("✅ Signup data saved to localStorage:", userData);
-      console.log("📦 LocalStorage contents after save:", localStorage.getItem("userSignupData"));
-      console.log("📦 Session set:", localStorage.getItem("userSession"));
-    } catch (e) {
-      console.error("❌ Error saving to localStorage:", e);
-      setError("Error saving account. Please try again.");
-      return;
+      
+      console.log("✅ Signup successful:", data.user);
+      console.log("📦 Session set locally");
+      
+      // Reset form and navigate to welcome page
+      setFullName("");
+      setOrganizationName("");
+      setEmail("");
+      setMobileNo("");
+      setPassword("");
+      setConfirmPassword("");
+      
+      onSignupSuccess();
+    } catch (error) {
+      console.error("❌ Signup error:", error);
+      setError("Error connecting to server. Please try again.");
     }
-
-    console.log("✅ All validations passed, signup successful with:", userData);
-    
-    // Reset form and navigate to welcome page
-    setFullName("");
-    setOrganizationName("");
-    setEmail("");
-    setMobileNo("");
-    setPassword("");
-    setConfirmPassword("");
-    
-    onSignupSuccess();
   };
 
   return (
