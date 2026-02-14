@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Subject {
   id: string;
@@ -17,30 +17,8 @@ interface SubjectModuleProps {
 }
 
 const SubjectModule: React.FC<SubjectModuleProps> = ({ onBack }) => {
-  const [subjects, setSubjects] = useState<Subject[]>([
-    {
-      id: "1",
-      subjectName: "Mathematics",
-      subjectCode: "MATH101",
-      category: "Science",
-      creditHours: 4,
-      passingMarks: 40,
-      totalMarks: 100,
-      description: "Fundamental concepts of mathematics",
-      status: "active",
-    },
-    {
-      id: "2",
-      subjectName: "English",
-      subjectCode: "ENG101",
-      category: "Language",
-      creditHours: 3,
-      passingMarks: 35,
-      totalMarks: 100,
-      description: "English language and literature",
-      status: "active",
-    },
-  ]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,6 +34,31 @@ const SubjectModule: React.FC<SubjectModuleProps> = ({ onBack }) => {
     totalMarks: 100,
     description: "",
   });
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/subjects");
+      if (!response.ok) throw new Error("Failed to fetch subjects");
+      const data = await response.json();
+      // Map MongoDB _id to id
+      const mappedData = data.map((subject: any) => ({
+        ...subject,
+        id: subject._id,
+      }));
+      setSubjects(mappedData);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      alert("Failed to load subjects");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -112,40 +115,55 @@ const SubjectModule: React.FC<SubjectModuleProps> = ({ onBack }) => {
     }
 
     if (editingId) {
-      // Edit existing subject
+      // Edit existing subject via API
+      updateSubject(editingId);
+    } else {
+      // Add new subject via API
+      createSubject();
+    }
+  };
+
+  const createSubject = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, status: "active" }),
+      });
+      if (!response.ok) throw new Error("Failed to create subject");
+      const newSubject = await response.json();
+      setSubjects((prev) => [...prev, { ...newSubject, id: newSubject._id }]);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating subject:", error);
+      alert("Failed to create subject");
+    }
+  };
+
+  const updateSubject = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/subjects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to update subject");
+      const updatedSubject = await response.json();
       setSubjects((prev) =>
         prev.map((s) =>
-          s.id === editingId
-            ? {
-                ...s,
-                subjectName: formData.subjectName,
-                subjectCode: formData.subjectCode,
-                category: formData.category,
-                creditHours: formData.creditHours,
-                passingMarks: formData.passingMarks,
-                totalMarks: formData.totalMarks,
-                description: formData.description,
-              }
-            : s
+          s.id === id ? { ...updatedSubject, id: updatedSubject._id } : s
         )
       );
-    } else {
-      // Add new subject
-      const newSubject: Subject = {
-        id: Date.now().toString(),
-        subjectName: formData.subjectName,
-        subjectCode: formData.subjectCode,
-        category: formData.category,
-        creditHours: formData.creditHours,
-        passingMarks: formData.passingMarks,
-        totalMarks: formData.totalMarks,
-        description: formData.description,
-        status: "active",
-      };
-      setSubjects((prev) => [...prev, newSubject]);
+      resetForm();
+    } catch (error) {
+      console.error("Error updating subject:", error);
+      alert("Failed to update subject");
     }
+  };
 
+  const resetForm = () => {
     setShowForm(false);
+    setEditingId(null);
     setFormData({
       subjectName: "",
       subjectCode: "",
@@ -159,18 +177,52 @@ const SubjectModule: React.FC<SubjectModuleProps> = ({ onBack }) => {
 
   const handleDeleteSubject = (id: string) => {
     if (window.confirm("Are you sure you want to delete this subject?")) {
+      deleteSubject(id);
+    }
+  };
+
+  const deleteSubject = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/subjects/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete subject");
       setSubjects((prev) => prev.filter((s) => s.id !== id));
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      alert("Failed to delete subject");
     }
   };
 
   const handleToggleStatus = (id: string) => {
-    setSubjects((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "active" ? "inactive" : "active" }
-          : s
-      )
-    );
+    const subject = subjects.find((s) => s.id === id);
+    if (subject) {
+      toggleSubjectStatus(id, subject.status);
+    }
+  };
+
+  const toggleSubjectStatus = async (
+    id: string,
+    currentStatus: "active" | "inactive"
+  ) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      const response = await fetch(`http://localhost:5000/api/subjects/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Failed to toggle status");
+      const updatedSubject = await response.json();
+      setSubjects((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...updatedSubject, id: updatedSubject._id } : s
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      alert("Failed to update status");
+    }
   };
 
   const filteredSubjects = subjects.filter((subject) => {

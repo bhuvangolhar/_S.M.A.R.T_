@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Event {
   id: string;
@@ -16,80 +16,8 @@ interface EventsModuleProps {
 }
 
 const EventsModule: React.FC<EventsModuleProps> = ({ onBack }) => {
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      eventName: "Republic Day",
-      date: "2026-01-26",
-      category: "holiday",
-      description: "National holiday - School closed",
-      location: "Nationwide",
-    },
-    {
-      id: "2",
-      eventName: "Mid Term Exams",
-      date: "2026-02-20",
-      category: "exam",
-      description: "Mid-term examination begins",
-      startTime: "09:00",
-      endTime: "12:00",
-      location: "School Campus",
-    },
-    {
-      id: "3",
-      eventName: "Annual Sports Day",
-      date: "2026-03-15",
-      category: "school-event",
-      description: "Annual sports competition and athletic events",
-      startTime: "08:00",
-      endTime: "04:00",
-      location: "School Ground",
-    },
-    {
-      id: "4",
-      eventName: "Holi",
-      date: "2026-03-29",
-      category: "holiday",
-      description: "Festival of Colors - School closed",
-      location: "Nationwide",
-    },
-    {
-      id: "5",
-      eventName: "Parent-Teacher Meeting",
-      date: "2026-04-05",
-      category: "meeting",
-      description: "Quarterly parent-teacher conference",
-      startTime: "03:00",
-      endTime: "05:00",
-      location: "School Auditorium",
-    },
-    {
-      id: "6",
-      eventName: "Summer Vacation",
-      date: "2026-05-01",
-      category: "holiday",
-      description: "Summer break - 2 months",
-      location: "Nationwide",
-    },
-    {
-      id: "7",
-      eventName: "Diwali Holiday Break (10 days)",
-      date: "2026-10-25",
-      category: "holiday",
-      description: "Diwali Festival - Extended school closure for 10 days (Oct 25 - Nov 3)",
-      location: "Nationwide",
-    },
-    {
-      id: "8",
-      eventName: "Annual Day Celebration",
-      date: "2026-11-20",
-      category: "school-event",
-      description: "Annual day celebration with cultural programs",
-      startTime: "03:00",
-      endTime: "06:00",
-      location: "School Auditorium",
-    },
-  ]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [showForm, setShowForm] = useState(false);
@@ -108,6 +36,31 @@ const EventsModule: React.FC<EventsModuleProps> = ({ onBack }) => {
     endTime: "",
     location: "",
   });
+
+  // Fetch events on component mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/events");
+      if (!response.ok) throw new Error("Failed to fetch events");
+      const data = await response.json();
+      // Map MongoDB _id to id
+      const mappedData = data.map((event: any) => ({
+        ...event,
+        id: event._id,
+      }));
+      setEvents(mappedData);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      alert("Failed to load events");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -158,37 +111,55 @@ const EventsModule: React.FC<EventsModuleProps> = ({ onBack }) => {
     }
 
     if (editingId) {
+      // Edit existing event via API
+      updateEvent(editingId);
+    } else {
+      // Add new event via API
+      createEvent();
+    }
+  };
+
+  const createEvent = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to create event");
+      const newEvent = await response.json();
+      setEvents((prev) => [...prev, { ...newEvent, id: newEvent._id }]);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Failed to create event");
+    }
+  };
+
+  const updateEvent = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to update event");
+      const updatedEvent = await response.json();
       setEvents((prev) =>
         prev.map((evt) =>
-          evt.id === editingId
-            ? {
-                ...evt,
-                eventName: formData.eventName,
-                date: formData.date,
-                category: formData.category,
-                description: formData.description,
-                startTime: formData.startTime || undefined,
-                endTime: formData.endTime || undefined,
-                location: formData.location || undefined,
-              }
-            : evt
+          evt.id === id ? { ...updatedEvent, id: updatedEvent._id } : evt
         )
       );
-    } else {
-      const newEvent: Event = {
-        id: Date.now().toString(),
-        eventName: formData.eventName,
-        date: formData.date,
-        category: formData.category,
-        description: formData.description,
-        startTime: formData.startTime || undefined,
-        endTime: formData.endTime || undefined,
-        location: formData.location || undefined,
-      };
-      setEvents((prev) => [...prev, newEvent]);
+      resetForm();
+    } catch (error) {
+      console.error("Error updating event:", error);
+      alert("Failed to update event");
     }
+  };
 
+  const resetForm = () => {
     setShowForm(false);
+    setEditingId(null);
     setFormData({
       eventName: "",
       date: new Date().toISOString().split("T")[0],
@@ -202,7 +173,20 @@ const EventsModule: React.FC<EventsModuleProps> = ({ onBack }) => {
 
   const handleDeleteEvent = (id: string) => {
     if (window.confirm("Delete this event?")) {
+      deleteEvent(id);
+    }
+  };
+
+  const deleteEvent = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete event");
       setEvents((prev) => prev.filter((evt) => evt.id !== id));
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("Failed to delete event");
     }
   };
 

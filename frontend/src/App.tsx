@@ -20,19 +20,34 @@ const App: React.FC = () => {
   useEffect(() => {
     const userSession = localStorage.getItem("userSession");
     const savedData = localStorage.getItem("userSignupData");
+    const lastVisitedPage = localStorage.getItem("lastVisitedPage");
     
     console.log("🔄 App loaded - checking session...");
     console.log("📦 Session:", userSession);
     console.log("📦 Account data:", savedData);
+    console.log("📦 Last page:", lastVisitedPage);
     
     if (userSession && savedData) {
       const session = JSON.parse(userSession);
       if (session.loggedIn) {
         console.log("✅ User session found, restoring...");
-        setCurrentPage("welcome");
+        // Restore to last visited page, or default to welcome if none
+        if (lastVisitedPage && lastVisitedPage !== "home" && lastVisitedPage !== "login" && lastVisitedPage !== "signup") {
+          console.log("🔄 Restoring to last page:", lastVisitedPage);
+          setCurrentPage(lastVisitedPage as PageType);
+        } else {
+          setCurrentPage("dashboard");
+        }
       }
     }
   }, []);
+
+  // Save current page to localStorage whenever it changes
+  useEffect(() => {
+    if (currentPage !== "home" && currentPage !== "login" && currentPage !== "signup") {
+      localStorage.setItem("lastVisitedPage", currentPage);
+    }
+  }, [currentPage]);
 
   if (currentPage === "login") {
     return (

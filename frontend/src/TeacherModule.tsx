@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Teacher {
   id: string;
@@ -19,34 +19,8 @@ interface TeacherModuleProps {
 }
 
 const TeacherModule: React.FC<TeacherModuleProps> = ({ onBack }) => {
-  const [teachers, setTeachers] = useState<Teacher[]>([
-    {
-      id: "1",
-      firstName: "Raj",
-      lastName: "Patel",
-      email: "raj@school.com",
-      mobileNo: "9876543220",
-      employeeId: "EMP001",
-      subject: "Mathematics",
-      qualification: "M.Sc",
-      dateOfBirth: "1985-03-10",
-      address: "123 Teacher Lane",
-      status: "active",
-    },
-    {
-      id: "2",
-      firstName: "Ananya",
-      lastName: "Sharma",
-      email: "ananya@school.com",
-      mobileNo: "9876543221",
-      employeeId: "EMP002",
-      subject: "English",
-      qualification: "M.A",
-      dateOfBirth: "1988-07-22",
-      address: "456 Academic Road",
-      status: "active",
-    },
-  ]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,6 +38,31 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ onBack }) => {
     dateOfBirth: "",
     address: "",
   });
+
+  // Fetch teachers on component mount
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/teachers");
+      if (!response.ok) throw new Error("Failed to fetch teachers");
+      const data = await response.json();
+      // Map MongoDB _id to id
+      const mappedData = data.map((teacher: any) => ({
+        ...teacher,
+        id: teacher._id,
+      }));
+      setTeachers(mappedData);
+    } catch (error) {
+      console.error("Error fetching teachers:", error);
+      alert("Failed to load teachers");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -121,44 +120,58 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ onBack }) => {
     }
 
     if (editingId) {
-      // Edit existing teacher
+      // Edit existing teacher via API
+      updateTeacher(editingId);
+    } else {
+      // Add new teacher via API
+      createTeacher();
+    }
+  };
+
+  const createTeacher = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/teachers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, status: "active" }),
+      });
+      if (!response.ok) throw new Error("Failed to create teacher");
+      const newTeacher = await response.json();
+      setTeachers((prev) => [
+        ...prev,
+        { ...newTeacher, id: newTeacher._id },
+      ]);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating teacher:", error);
+      alert("Failed to create teacher");
+    }
+  };
+
+  const updateTeacher = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/teachers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to update teacher");
+      const updatedTeacher = await response.json();
       setTeachers((prev) =>
         prev.map((t) =>
-          t.id === editingId
-            ? {
-                ...t,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                mobileNo: formData.mobileNo,
-                employeeId: formData.employeeId,
-                subject: formData.subject,
-                qualification: formData.qualification,
-                dateOfBirth: formData.dateOfBirth,
-                address: formData.address,
-              }
-            : t
+          t.id === id ? { ...updatedTeacher, id: updatedTeacher._id } : t
         )
       );
-    } else {
-      // Add new teacher
-      const newTeacher: Teacher = {
-        id: Date.now().toString(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        mobileNo: formData.mobileNo,
-        employeeId: formData.employeeId,
-        subject: formData.subject,
-        qualification: formData.qualification,
-        dateOfBirth: formData.dateOfBirth,
-        address: formData.address,
-        status: "active",
-      };
-      setTeachers((prev) => [...prev, newTeacher]);
+      resetForm();
+    } catch (error) {
+      console.error("Error updating teacher:", error);
+      alert("Failed to update teacher");
     }
+  };
 
+  const resetForm = () => {
     setShowForm(false);
+    setEditingId(null);
     setFormData({
       firstName: "",
       lastName: "",
@@ -174,18 +187,52 @@ const TeacherModule: React.FC<TeacherModuleProps> = ({ onBack }) => {
 
   const handleDeleteTeacher = (id: string) => {
     if (window.confirm("Are you sure you want to delete this teacher?")) {
+      deleteTeacher(id);
+    }
+  };
+
+  const deleteTeacher = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/teachers/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete teacher");
       setTeachers((prev) => prev.filter((t) => t.id !== id));
+    } catch (error) {
+      console.error("Error deleting teacher:", error);
+      alert("Failed to delete teacher");
     }
   };
 
   const handleToggleStatus = (id: string) => {
-    setTeachers((prev) =>
-      prev.map((t) =>
-        t.id === id
-          ? { ...t, status: t.status === "active" ? "inactive" : "active" }
-          : t
-      )
-    );
+    const teacher = teachers.find((t) => t.id === id);
+    if (teacher) {
+      toggleTeacherStatus(id, teacher.status);
+    }
+  };
+
+  const toggleTeacherStatus = async (
+    id: string,
+    currentStatus: "active" | "inactive"
+  ) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      const response = await fetch(`http://localhost:5000/api/teachers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Failed to toggle status");
+      const updatedTeacher = await response.json();
+      setTeachers((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...updatedTeacher, id: updatedTeacher._id } : t
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      alert("Failed to update status");
+    }
   };
 
   const filteredTeachers = teachers.filter((teacher) => {

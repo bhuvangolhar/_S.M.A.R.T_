@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface StudentAttendance {
   id: string;
@@ -26,60 +26,12 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<"student" | "staff">("student");
 
   // Student Attendance States
-  const [studentAttendance, setStudentAttendance] = useState<StudentAttendance[]>([
-    {
-      id: "1",
-      studentName: "Aarav Kumar",
-      enrollmentNo: "STU001",
-      className: "10-A",
-      date: "2026-02-15",
-      status: "present",
-    },
-    {
-      id: "2",
-      studentName: "Priya Sharma",
-      enrollmentNo: "STU002",
-      className: "10-A",
-      date: "2026-02-15",
-      status: "present",
-    },
-    {
-      id: "3",
-      studentName: "Rohan Singh",
-      enrollmentNo: "STU003",
-      className: "10-B",
-      date: "2026-02-15",
-      status: "absent",
-    },
-  ]);
+  const [studentAttendance, setStudentAttendance] = useState<StudentAttendance[]>([]);
+  const [studentLoading, setStudentLoading] = useState(true);
 
   // Staff Attendance States
-  const [staffAttendance, setStaffAttendance] = useState<StaffAttendance[]>([
-    {
-      id: "s1",
-      staffName: "Raj Patel",
-      employeeId: "EMP001",
-      role: "Mathematics Teacher",
-      date: "2026-02-15",
-      status: "present",
-    },
-    {
-      id: "s2",
-      staffName: "Ananya Sharma",
-      employeeId: "EMP002",
-      role: "English Teacher",
-      date: "2026-02-15",
-      status: "present",
-    },
-    {
-      id: "s3",
-      staffName: "Vikram Gupta",
-      employeeId: "EMP003",
-      role: "Principal",
-      date: "2026-02-15",
-      status: "on-duty",
-    },
-  ]);
+  const [staffAttendance, setStaffAttendance] = useState<StaffAttendance[]>([]);
+  const [staffLoading, setStaffLoading] = useState(true);
 
   const [studentSearchTerm, setStudentSearchTerm] = useState("");
   const [studentFilterClass, setStudentFilterClass] = useState("all");
@@ -108,6 +60,52 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ onBack }) => {
     status: "present" as const,
   });
 
+  // Fetch attendance data on component mount
+  useEffect(() => {
+    fetchStudentAttendance();
+    fetchStaffAttendance();
+  }, []);
+
+  const fetchStudentAttendance = async () => {
+    try {
+      setStudentLoading(true);
+      const response = await fetch(
+        "http://localhost:5000/api/attendance/students"
+      );
+      if (!response.ok) throw new Error("Failed to fetch student attendance");
+      const data = await response.json();
+      const mappedData = data.map((record: any) => ({
+        ...record,
+        id: record._id,
+      }));
+      setStudentAttendance(mappedData);
+    } catch (error) {
+      console.error("Error fetching student attendance:", error);
+      alert("Failed to load student attendance");
+    } finally {
+      setStudentLoading(false);
+    }
+  };
+
+  const fetchStaffAttendance = async () => {
+    try {
+      setStaffLoading(true);
+      const response = await fetch("http://localhost:5000/api/attendance/staff");
+      if (!response.ok) throw new Error("Failed to fetch staff attendance");
+      const data = await response.json();
+      const mappedData = data.map((record: any) => ({
+        ...record,
+        id: record._id,
+      }));
+      setStaffAttendance(mappedData);
+    } catch (error) {
+      console.error("Error fetching staff attendance:", error);
+      alert("Failed to load staff attendance");
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
   // Student Attendance Handlers
   const handleAddStudentAttendance = () => {
     if (
@@ -119,34 +117,93 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ onBack }) => {
       return;
     }
 
-    const newAttendance: StudentAttendance = {
-      id: Date.now().toString(),
-      ...studentFormData,
-    };
+    createStudentAttendance();
+  };
 
-    setStudentAttendance((prev) => [...prev, newAttendance]);
-    setShowStudentForm(false);
-    setStudentFormData({
-      studentName: "",
-      enrollmentNo: "",
-      className: "10-A",
-      date: new Date().toISOString().split("T")[0],
-      status: "present",
-    });
+  const createStudentAttendance = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/attendance/students",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(studentFormData),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to create attendance");
+      const newAttendance = await response.json();
+      setStudentAttendance((prev) => [
+        ...prev,
+        { ...newAttendance, id: newAttendance._id },
+      ]);
+      setShowStudentForm(false);
+      setStudentFormData({
+        studentName: "",
+        enrollmentNo: "",
+        className: "10-A",
+        date: new Date().toISOString().split("T")[0],
+        status: "present",
+      });
+    } catch (error) {
+      console.error("Error creating attendance:", error);
+      alert("Failed to mark attendance");
+    }
   };
 
   const handleUpdateStudentStatus = (
     id: string,
     newStatus: "present" | "absent" | "leave"
   ) => {
-    setStudentAttendance((prev) =>
-      prev.map((att) => (att.id === id ? { ...att, status: newStatus } : att))
-    );
+    updateStudentAttendanceStatus(id, newStatus);
+  };
+
+  const updateStudentAttendanceStatus = async (
+    id: string,
+    newStatus: "present" | "absent" | "leave"
+  ) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/attendance/students/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to update status");
+      const updatedAttendance = await response.json();
+      setStudentAttendance((prev) =>
+        prev.map((att) =>
+          att.id === id
+            ? { ...updatedAttendance, id: updatedAttendance._id }
+            : att
+        )
+      );
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update attendance status");
+    }
   };
 
   const handleDeleteStudentAttendance = (id: string) => {
     if (window.confirm("Delete this attendance record?")) {
+      deleteStudentAttendance(id);
+    }
+  };
+
+  const deleteStudentAttendance = async (id: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/attendance/students/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) throw new Error("Failed to delete attendance");
       setStudentAttendance((prev) => prev.filter((att) => att.id !== id));
+    } catch (error) {
+      console.error("Error deleting attendance:", error);
+      alert("Failed to delete attendance record");
     }
   };
 
@@ -178,34 +235,90 @@ const AttendanceModule: React.FC<AttendanceModuleProps> = ({ onBack }) => {
       return;
     }
 
-    const newAttendance: StaffAttendance = {
-      id: "s" + Date.now().toString(),
-      ...staffFormData,
-    };
+    createStaffAttendance();
+  };
 
-    setStaffAttendance((prev) => [...prev, newAttendance]);
-    setShowStaffForm(false);
-    setStaffFormData({
-      staffName: "",
-      employeeId: "",
-      role: "Teacher",
-      date: new Date().toISOString().split("T")[0],
-      status: "present",
-    });
+  const createStaffAttendance = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/attendance/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(staffFormData),
+      });
+      if (!response.ok) throw new Error("Failed to create attendance");
+      const newAttendance = await response.json();
+      setStaffAttendance((prev) => [
+        ...prev,
+        { ...newAttendance, id: newAttendance._id },
+      ]);
+      setShowStaffForm(false);
+      setStaffFormData({
+        staffName: "",
+        employeeId: "",
+        role: "Teacher",
+        date: new Date().toISOString().split("T")[0],
+        status: "present",
+      });
+    } catch (error) {
+      console.error("Error creating attendance:", error);
+      alert("Failed to mark attendance");
+    }
   };
 
   const handleUpdateStaffStatus = (
     id: string,
     newStatus: "present" | "absent" | "leave" | "on-duty"
   ) => {
-    setStaffAttendance((prev) =>
-      prev.map((att) => (att.id === id ? { ...att, status: newStatus } : att))
-    );
+    updateStaffAttendanceStatus(id, newStatus);
+  };
+
+  const updateStaffAttendanceStatus = async (
+    id: string,
+    newStatus: "present" | "absent" | "leave" | "on-duty"
+  ) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/attendance/staff/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to update status");
+      const updatedAttendance = await response.json();
+      setStaffAttendance((prev) =>
+        prev.map((att) =>
+          att.id === id
+            ? { ...updatedAttendance, id: updatedAttendance._id }
+            : att
+        )
+      );
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update attendance status");
+    }
   };
 
   const handleDeleteStaffAttendance = (id: string) => {
     if (window.confirm("Delete this attendance record?")) {
+      deleteStaffAttendance(id);
+    }
+  };
+
+  const deleteStaffAttendance = async (id: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/attendance/staff/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) throw new Error("Failed to delete attendance");
       setStaffAttendance((prev) => prev.filter((att) => att.id !== id));
+    } catch (error) {
+      console.error("Error deleting attendance:", error);
+      alert("Failed to delete attendance record");
     }
   };
 

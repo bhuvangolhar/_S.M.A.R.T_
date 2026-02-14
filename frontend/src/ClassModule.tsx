@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Class {
   id: string;
@@ -19,34 +19,8 @@ interface ClassModuleProps {
 }
 
 const ClassModule: React.FC<ClassModuleProps> = ({ onBack }) => {
-  const [classes, setClasses] = useState<Class[]>([
-    {
-      id: "1",
-      className: "Class 10-A",
-      classTeacher: "Raj Patel",
-      section: "A",
-      roomNumber: "101",
-      totalStudents: 45,
-      startTime: "08:00",
-      endTime: "01:00",
-      capacity: 50,
-      description: "Science Stream",
-      status: "active",
-    },
-    {
-      id: "2",
-      className: "Class 10-B",
-      classTeacher: "Ananya Sharma",
-      section: "B",
-      roomNumber: "102",
-      totalStudents: 42,
-      startTime: "08:00",
-      endTime: "01:00",
-      capacity: 50,
-      description: "Commercial Stream",
-      status: "active",
-    },
-  ]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,6 +38,31 @@ const ClassModule: React.FC<ClassModuleProps> = ({ onBack }) => {
     capacity: 50,
     description: "",
   });
+
+  // Fetch classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:5000/api/classes");
+      if (!response.ok) throw new Error("Failed to fetch classes");
+      const data = await response.json();
+      // Map MongoDB _id to id
+      const mappedData = data.map((cls: any) => ({
+        ...cls,
+        id: cls._id,
+      }));
+      setClasses(mappedData);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      alert("Failed to load classes");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -125,44 +124,55 @@ const ClassModule: React.FC<ClassModuleProps> = ({ onBack }) => {
     }
 
     if (editingId) {
-      // Edit existing class
+      // Edit existing class via API
+      updateClass(editingId);
+    } else {
+      // Add new class via API
+      createClass();
+    }
+  };
+
+  const createClass = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/classes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, status: "active" }),
+      });
+      if (!response.ok) throw new Error("Failed to create class");
+      const newClass = await response.json();
+      setClasses((prev) => [...prev, { ...newClass, id: newClass._id }]);
+      resetForm();
+    } catch (error) {
+      console.error("Error creating class:", error);
+      alert("Failed to create class");
+    }
+  };
+
+  const updateClass = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/classes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error("Failed to update class");
+      const updatedClass = await response.json();
       setClasses((prev) =>
         prev.map((c) =>
-          c.id === editingId
-            ? {
-                ...c,
-                className: formData.className,
-                classTeacher: formData.classTeacher,
-                section: formData.section,
-                roomNumber: formData.roomNumber,
-                totalStudents: formData.totalStudents,
-                startTime: formData.startTime,
-                endTime: formData.endTime,
-                capacity: formData.capacity,
-                description: formData.description,
-              }
-            : c
+          c.id === id ? { ...updatedClass, id: updatedClass._id } : c
         )
       );
-    } else {
-      // Add new class
-      const newClass: Class = {
-        id: Date.now().toString(),
-        className: formData.className,
-        classTeacher: formData.classTeacher,
-        section: formData.section,
-        roomNumber: formData.roomNumber,
-        totalStudents: formData.totalStudents,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        capacity: formData.capacity,
-        description: formData.description,
-        status: "active",
-      };
-      setClasses((prev) => [...prev, newClass]);
+      resetForm();
+    } catch (error) {
+      console.error("Error updating class:", error);
+      alert("Failed to update class");
     }
+  };
 
+  const resetForm = () => {
     setShowForm(false);
+    setEditingId(null);
     setFormData({
       className: "",
       classTeacher: "",
@@ -178,18 +188,52 @@ const ClassModule: React.FC<ClassModuleProps> = ({ onBack }) => {
 
   const handleDeleteClass = (id: string) => {
     if (window.confirm("Are you sure you want to delete this class?")) {
+      deleteClass(id);
+    }
+  };
+
+  const deleteClass = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/classes/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete class");
       setClasses((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      alert("Failed to delete class");
     }
   };
 
   const handleToggleStatus = (id: string) => {
-    setClasses((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "active" ? "inactive" : "active" }
-          : c
-      )
-    );
+    const cls = classes.find((c) => c.id === id);
+    if (cls) {
+      toggleClassStatus(id, cls.status);
+    }
+  };
+
+  const toggleClassStatus = async (
+    id: string,
+    currentStatus: "active" | "inactive"
+  ) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    try {
+      const response = await fetch(`http://localhost:5000/api/classes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Failed to toggle status");
+      const updatedClass = await response.json();
+      setClasses((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...updatedClass, id: updatedClass._id } : c
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      alert("Failed to update status");
+    }
   };
 
   const filteredClasses = classes.filter((cls) => {

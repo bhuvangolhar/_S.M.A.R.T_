@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Student {
-  id: string;
+  _id?: string;
+  id?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -18,33 +19,8 @@ interface StudentModuleProps {
 }
 
 const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: "1",
-      firstName: "Arjun",
-      lastName: "Kumar",
-      email: "arjun@example.com",
-      mobileNo: "9876543210",
-      enrollmentNo: "ENR001",
-      class: "10-A",
-      dateOfBirth: "2009-05-15",
-      address: "123 Main Street",
-      status: "active",
-    },
-    {
-      id: "2",
-      firstName: "Priya",
-      lastName: "Singh",
-      email: "priya@example.com",
-      mobileNo: "9876543211",
-      enrollmentNo: "ENR002",
-      class: "10-B",
-      dateOfBirth: "2009-07-20",
-      address: "456 Park Avenue",
-      status: "active",
-    },
-  ]);
-
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,6 +36,29 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
     dateOfBirth: "",
     address: "",
   });
+
+  // Fetch students from backend on component mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/students");
+        const data = await response.json();
+        console.log("✅ Fetched students:", data);
+        setStudents(
+          data.map((student: any) => ({
+            ...student,
+            id: student._id,
+            status: student.status || "active",
+          }))
+        );
+      } catch (error) {
+        console.error("❌ Error fetching students:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -87,7 +86,7 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
   };
 
   const handleEditStudent = (student: Student) => {
-    setEditingId(student.id);
+    setEditingId(student._id || student.id);
     setFormData({
       firstName: student.firstName,
       lastName: student.lastName,
@@ -101,7 +100,7 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (
@@ -114,69 +113,99 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
       return;
     }
 
-    if (editingId) {
-      // Edit existing student
+    try {
+      if (editingId) {
+        // Edit existing student
+        const response = await fetch(`http://localhost:5000/api/students/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            status: "active",
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Error updating student");
+        }
+        const updatedStudent = await response.json();
+        setStudents((prev) =>
+          prev.map((s) =>
+            s._id === editingId || s.id === editingId
+              ? { ...updatedStudent, id: updatedStudent._id }
+              : s
+          )
+        );
+      } else {
+        // Add new student
+        const response = await fetch("http://localhost:5000/api/students", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            status: "active",
+          }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Error creating student");
+        }
+        const newStudent = await response.json();
+        setStudents((prev) => [...prev, { ...newStudent, id: newStudent._id }]);
+      }
+      setShowForm(false);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        mobileNo: "",
+        enrollmentNo: "",
+        class: "10-A",
+        dateOfBirth: "",
+        address: "",
+      });
+    } catch (error) {
+      console.error("❌ Error submitting student:", error);
+      alert(`Error saving student: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  };
+
+  const handleDeleteStudent = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this student?")) {
+      try {
+        await fetch(`http://localhost:5000/api/students/${id}`, {
+          method: "DELETE",
+        });
+        setStudents((prev) => prev.filter((s) => s._id !== id && s.id !== id));
+      } catch (error) {
+        console.error("❌ Error deleting student:", error);
+        alert("Error deleting student");
+      }
+    }
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      const student = students.find((s) => s._id === id || s.id === id);
+      if (!student) return;
+      
+      const newStatus = student.status === "active" ? "inactive" : "active";
+      const response = await fetch(`http://localhost:5000/api/students/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...student, status: newStatus }),
+      });
+      const updatedStudent = await response.json();
       setStudents((prev) =>
         prev.map((s) =>
-          s.id === editingId
-            ? {
-                ...s,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                mobileNo: formData.mobileNo,
-                enrollmentNo: formData.enrollmentNo,
-                class: formData.class,
-                dateOfBirth: formData.dateOfBirth,
-                address: formData.address,
-              }
+          s._id === id || s.id === id
+            ? { ...updatedStudent, id: updatedStudent._id }
             : s
         )
       );
-    } else {
-      // Add new student
-      const newStudent: Student = {
-        id: Date.now().toString(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        mobileNo: formData.mobileNo,
-        enrollmentNo: formData.enrollmentNo,
-        class: formData.class,
-        dateOfBirth: formData.dateOfBirth,
-        address: formData.address,
-        status: "active",
-      };
-      setStudents((prev) => [...prev, newStudent]);
+    } catch (error) {
+      console.error("❌ Error toggling status:", error);
     }
-
-    setShowForm(false);
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      mobileNo: "",
-      enrollmentNo: "",
-      class: "10-A",
-      dateOfBirth: "",
-      address: "",
-    });
-  };
-
-  const handleDeleteStudent = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this student?")) {
-      setStudents((prev) => prev.filter((s) => s.id !== id));
-    }
-  };
-
-  const handleToggleStatus = (id: string) => {
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "active" ? "inactive" : "active" }
-          : s
-      )
-    );
   };
 
   const filteredStudents = students.filter((student) => {
@@ -386,7 +415,7 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
           <tbody>
             {filteredStudents.length > 0 ? (
               filteredStudents.map((student) => (
-                <tr key={student.id}>
+                <tr key={student._id || student.id}>
                   <td className="enrollment-col">{student.enrollmentNo}</td>
                   <td className="name-col">
                     {student.firstName} {student.lastName}
@@ -410,14 +439,18 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
                       ✏️
                     </button>
                     <button
-                      onClick={() => handleToggleStatus(student.id)}
+                      onClick={() =>
+                        handleToggleStatus(student._id || student.id || "")
+                      }
                       className="action-btn toggle-btn"
                       title="Toggle Status"
                     >
                       🔄
                     </button>
                     <button
-                      onClick={() => handleDeleteStudent(student.id)}
+                      onClick={() =>
+                        handleDeleteStudent(student._id || student.id || "")
+                      }
                       className="action-btn delete-btn"
                       title="Delete"
                     >
@@ -429,7 +462,7 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
             ) : (
               <tr>
                 <td colSpan={7} className="no-data">
-                  No students found
+                  {loading ? "Loading students..." : "No students found"}
                 </td>
               </tr>
             )}
@@ -443,5 +476,6 @@ const StudentModule: React.FC<StudentModuleProps> = ({ onBack }) => {
     </div>
   );
 };
+
 
 export default StudentModule;
