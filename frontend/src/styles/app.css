@@ -741,7 +741,8 @@ button:hover {
 }
 
 .form-input,
-.filter-select {
+.filter-select,
+textarea {
   padding: 10px 12px;
   background-color: #0f172a;
   border: 1px solid #475569;
@@ -749,10 +750,12 @@ button:hover {
   color: #e5e7eb;
   font-size: 14px;
   transition: border-color 0.3s;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .form-input:focus,
-.filter-select:focus {
+.filter-select:focus,
+textarea:focus {
   outline: none;
   border-color: #a78bfa;
   box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
@@ -957,6 +960,15 @@ button:hover {
   text-align: center;
   color: #64748b;
   padding: 40px 12px !important;
+}
+
+.student-count {
+  background-color: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* Footer */

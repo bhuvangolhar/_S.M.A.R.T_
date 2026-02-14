@@ -5,6 +5,7 @@ import WelcomePage from "./WelcomePage";
 import Dashboard from "./Dashboard";
 import StudentModule from "./StudentModule";
 import TeacherModule from "./TeacherModule";
+import ClassModule from "./ClassModule";
 
 type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "attendance" | "reports" | "settings";
 
@@ -78,6 +79,14 @@ const App: React.FC = () => {
   if (currentPage === "teachers") {
     return (
       <TeacherModule 
+        onBack={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "classes") {
+    return (
+      <ClassModule 
         onBack={() => setCurrentPage("dashboard")}
       />
     );
