@@ -82,6 +82,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
               <span>📚 Classes</span>
             </li>
             <li 
+              className={`menu-item ${activeMenu === "subjects" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("subjects");
+                onNavigate("subjects");
+              }}
+            >
+              <span>📖 Subjects</span>
+            </li>
+            <li 
               className={`menu-item ${activeMenu === "attendance" ? "active" : ""}`}
               onClick={() => {
                 setActiveMenu("attendance");

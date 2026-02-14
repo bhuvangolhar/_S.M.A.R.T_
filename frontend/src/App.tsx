@@ -6,8 +6,9 @@ import Dashboard from "./Dashboard";
 import StudentModule from "./StudentModule";
 import TeacherModule from "./TeacherModule";
 import ClassModule from "./ClassModule";
+import SubjectModule from "./SubjectModule";
 
-type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "attendance" | "reports" | "settings";
+type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "subjects" | "attendance" | "reports" | "settings";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
@@ -87,6 +88,14 @@ const App: React.FC = () => {
   if (currentPage === "classes") {
     return (
       <ClassModule 
+        onBack={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "subjects") {
+    return (
+      <SubjectModule 
         onBack={() => setCurrentPage("dashboard")}
       />
     );
