@@ -8,8 +8,9 @@ import TeacherModule from "./TeacherModule";
 import ClassModule from "./ClassModule";
 import SubjectModule from "./SubjectModule";
 import AttendanceModule from "./AttendanceModule";
+import EventsModule from "./EventsModule";
 
-type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "subjects" | "attendance" | "reports" | "settings";
+type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "subjects" | "attendance" | "events" | "reports" | "settings";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
@@ -105,6 +106,14 @@ const App: React.FC = () => {
   if (currentPage === "attendance") {
     return (
       <AttendanceModule 
+        onBack={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "events") {
+    return (
+      <EventsModule 
         onBack={() => setCurrentPage("dashboard")}
       />
     );

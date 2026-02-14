@@ -1024,3 +1024,272 @@ textarea:focus {
 .center-align {
   text-align: center;
 }
+
+/* Events Module Styles */
+.events-view-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.view-mode-toggle {
+  display: flex;
+  gap: 8px;
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.view-btn {
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #94a3b8;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+
+.view-btn:hover {
+  color: #cbd5e1;
+}
+
+.view-btn.active {
+  background-color: #a78bfa;
+  color: #020617;
+}
+
+/* List View */
+.list-view {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.event-card {
+  display: flex;
+  gap: 16px;
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s;
+}
+
+.event-card:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 5px 15px rgba(167, 139, 250, 0.15);
+  transform: translateX(2px);
+}
+
+.event-card-left {
+  display: flex;
+  align-items: flex-start;
+}
+
+.event-category-indicator {
+  width: 4px;
+  height: 60px;
+  border-radius: 2px;
+}
+
+.event-card-content {
+  flex: 1;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.event-header h3 {
+  color: #e5e7eb;
+  margin: 0;
+  font-size: 16px;
+}
+
+.event-category-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.event-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.detail-icon {
+  font-size: 14px;
+}
+
+.detail-value {
+  color: #94a3b8;
+}
+
+.event-description {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 8px 0 0 0;
+  line-height: 1.4;
+}
+
+.event-card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.no-events {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Calendar View */
+.calendar-view {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+}
+
+.month-nav-btn {
+  background-color: #a78bfa;
+  color: #020617;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.month-nav-btn:hover {
+  background-color: #8b5cf6;
+}
+
+.calendar-title {
+  color: #e5e7eb;
+  margin: 0;
+  font-size: 20px;
+}
+
+.calendar-container {
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.weekday {
+  text-align: center;
+  color: #a78bfa;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 0;
+  border-bottom: 2px solid #475569;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  min-width: 600px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  background-color: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 100px;
+}
+
+.calendar-day.empty {
+  background-color: transparent;
+  border: none;
+}
+
+.calendar-day.has-events {
+  border-color: #8b5cf6;
+  background-color: rgba(139, 92, 246, 0.05);
+}
+
+.day-number {
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.day-event {
+  font-size: 11px;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+.day-event-more {
+  font-size: 10px;
+  color: #94a3b8;
+  padding: 2px 0;
+  font-weight: 600;
+}
