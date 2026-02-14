@@ -9,6 +9,7 @@ import ClassModule from "./ClassModule";
 import SubjectModule from "./SubjectModule";
 import AttendanceModule from "./AttendanceModule";
 import EventsModule from "./EventsModule";
+import SettingsModule from "./SettingsModule";
 
 type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "subjects" | "attendance" | "events" | "reports" | "settings";
 
@@ -114,6 +115,14 @@ const App: React.FC = () => {
   if (currentPage === "events") {
     return (
       <EventsModule 
+        onBack={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "settings") {
+    return (
+      <SettingsModule 
         onBack={() => setCurrentPage("dashboard")}
       />
     );
