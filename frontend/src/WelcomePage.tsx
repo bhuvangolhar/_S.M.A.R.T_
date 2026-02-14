@@ -17,13 +17,21 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ onLogout }) => {
   useEffect(() => {
     // Get user data from localStorage
     const savedData = localStorage.getItem("userSignupData");
+    console.log("📦 WelcomePage - Retrieved from localStorage:", savedData);
+    
     if (savedData) {
-      setUserData(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      console.log("✅ WelcomePage - Parsed user data:", parsedData);
+      setUserData(parsedData);
+    } else {
+      console.log("❌ WelcomePage - No data found in localStorage");
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("userSignupData");
+    // Only clear the session flag, keep the account data
+    localStorage.removeItem("userSession");
+    console.log("✅ Logged out (account data preserved for login)");
     onLogout();
   };
 

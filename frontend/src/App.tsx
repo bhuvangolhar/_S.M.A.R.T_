@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
 import WelcomePage from "./WelcomePage";
@@ -8,11 +8,30 @@ type PageType = "home" | "login" | "signup" | "welcome";
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
 
+  // Check for existing user session on app load
+  useEffect(() => {
+    const userSession = localStorage.getItem("userSession");
+    const savedData = localStorage.getItem("userSignupData");
+    
+    console.log("🔄 App loaded - checking session...");
+    console.log("📦 Session:", userSession);
+    console.log("📦 Account data:", savedData);
+    
+    if (userSession && savedData) {
+      const session = JSON.parse(userSession);
+      if (session.loggedIn) {
+        console.log("✅ User session found, restoring...");
+        setCurrentPage("welcome");
+      }
+    }
+  }, []);
+
   if (currentPage === "login") {
     return (
       <LoginPage 
         onBack={() => setCurrentPage("home")}
         onGoToSignup={() => setCurrentPage("signup")}
+        onLoginSuccess={() => setCurrentPage("welcome")}
       />
     );
   }

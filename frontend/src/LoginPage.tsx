@@ -3,9 +3,10 @@ import React, { useState } from "react";
 interface LoginPageProps {
   onBack: () => void;
   onGoToSignup: () => void;
+  onLoginSuccess: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup, onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,11 +26,40 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup }) => {
       return;
     }
 
-    // Here you would typically send credentials to backend
-    console.log("Login attempt with:", { email, password });
-    alert("Login successful! (Demo mode)");
+    // Check if user exists in localStorage
+    const savedData = localStorage.getItem("userSignupData");
+    console.log("🔍 Checking for saved data...");
+    console.log("📦 LocalStorage contents:", savedData);
+    
+    if (!savedData) {
+      console.log("❌ No saved data found");
+      setError("No account found. Please sign up first");
+      return;
+    }
+
+    const userData = JSON.parse(savedData);
+    console.log("✅ Found saved user data:", userData);
+
+    // Verify email and password
+    if (userData.email !== email) {
+      console.log("❌ Email mismatch. Expected:", userData.email, "Got:", email);
+      setError("Email not found. Please check and try again");
+      return;
+    }
+
+    if (userData.password !== password) {
+      console.log("❌ Password mismatch. Expected:", userData.password, "Got:", password);
+      setError("Incorrect password. Please try again");
+      return;
+    }
+
+    // Login successful - set session flag
+    localStorage.setItem("userSession", JSON.stringify({ loggedIn: true, email: email }));
+    console.log("✅ Login successful for:", email);
+    console.log("📦 Session set:", localStorage.getItem("userSession"));
     setEmail("");
     setPassword("");
+    onLoginSuccess();
   };
 
   return (

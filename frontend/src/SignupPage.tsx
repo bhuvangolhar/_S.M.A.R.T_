@@ -17,31 +17,44 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin, onSignupSu
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🚀 Signup form submitted");
+    console.log("Form data:", { fullName, organizationName, email, mobileNo, password, confirmPassword });
+    
     setError("");
 
     // Basic validation
     if (!fullName || !organizationName || !email || !mobileNo || !password || !confirmPassword) {
-      setError("Please fill in all fields");
+      const errorMsg = "Please fill in all fields";
+      console.log("❌ Validation failed:", errorMsg);
+      setError(errorMsg);
       return;
     }
 
     if (!email.includes("@")) {
-      setError("Please enter a valid email");
+      const errorMsg = "Please enter a valid email";
+      console.log("❌ Email validation failed:", errorMsg);
+      setError(errorMsg);
       return;
     }
 
     if (mobileNo.length < 10) {
-      setError("Please enter a valid mobile number");
+      const errorMsg = "Please enter a valid mobile number";
+      console.log("❌ Mobile validation failed:", errorMsg);
+      setError(errorMsg);
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      const errorMsg = "Password must be at least 6 characters";
+      console.log("❌ Password length validation failed:", errorMsg);
+      setError(errorMsg);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      const errorMsg = "Passwords do not match";
+      console.log("❌ Password match validation failed:", errorMsg);
+      setError(errorMsg);
       return;
     }
 
@@ -53,9 +66,20 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin, onSignupSu
       mobileNo,
       password,
     };
-    localStorage.setItem("userSignupData", JSON.stringify(userData));
+    
+    try {
+      localStorage.setItem("userSignupData", JSON.stringify(userData));
+      localStorage.setItem("userSession", JSON.stringify({ loggedIn: true, email: email }));
+      console.log("✅ Signup data saved to localStorage:", userData);
+      console.log("📦 LocalStorage contents after save:", localStorage.getItem("userSignupData"));
+      console.log("📦 Session set:", localStorage.getItem("userSession"));
+    } catch (e) {
+      console.error("❌ Error saving to localStorage:", e);
+      setError("Error saving account. Please try again.");
+      return;
+    }
 
-    console.log("Signup successful with:", userData);
+    console.log("✅ All validations passed, signup successful with:", userData);
     
     // Reset form and navigate to welcome page
     setFullName("");
