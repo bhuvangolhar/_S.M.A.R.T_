@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
 import WelcomePage from "./WelcomePage";
+import Dashboard from "./Dashboard";
 
-type PageType = "home" | "login" | "signup" | "welcome";
+type PageType = "home" | "login" | "signup" | "welcome" | "dashboard";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
@@ -49,6 +50,15 @@ const App: React.FC = () => {
   if (currentPage === "welcome") {
     return (
       <WelcomePage 
+        onLogout={() => setCurrentPage("home")}
+        onContinueToDashboard={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "dashboard") {
+    return (
+      <Dashboard 
         onLogout={() => setCurrentPage("home")}
       />
     );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 interface WelcomePageProps {
   onLogout: () => void;
+  onContinueToDashboard: () => void;
 }
 
 interface UserData {
@@ -11,7 +12,7 @@ interface UserData {
   mobileNo: string;
 }
 
-const WelcomePage: React.FC<WelcomePageProps> = ({ onLogout }) => {
+const WelcomePage: React.FC<WelcomePageProps> = ({ onLogout, onContinueToDashboard }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
@@ -84,7 +85,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ onLogout }) => {
         </div>
 
         <div className="welcome-actions">
-          <button className="continue-btn">Continue to Dashboard</button>
+          <button onClick={onContinueToDashboard} className="continue-btn">Continue to Dashboard</button>
           <button onClick={handleLogout} className="logout-btn">
             Sign Out
           </button>
