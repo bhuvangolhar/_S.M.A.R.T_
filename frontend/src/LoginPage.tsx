@@ -2,9 +2,10 @@ import React, { useState } from "react";
 
 interface LoginPageProps {
   onBack: () => void;
+  onGoToSignup: () => void;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onBack, onGoToSignup }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -68,6 +69,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
             Login
           </button>
         </form>
+
+        <p className="signup-link">
+          Don't have an account?{" "}
+          <button 
+            type="button" 
+            className="link-btn" 
+            onClick={onGoToSignup}
+          >
+            Sign Up
+          </button>
+        </p>
 
         <button onClick={onBack} className="back-btn">
           Back

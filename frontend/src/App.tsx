@@ -1,11 +1,28 @@
 import { useState } from "react";
 import LoginPage from "./LoginPage";
+import SignupPage from "./SignupPage";
+
+type PageType = "home" | "login" | "signup";
 
 const App: React.FC = () => {
-  const [showLogin, setShowLogin] = useState(false);
+  const [currentPage, setCurrentPage] = useState<PageType>("home");
 
-  if (showLogin) {
-    return <LoginPage onBack={() => setShowLogin(false)} />;
+  if (currentPage === "login") {
+    return (
+      <LoginPage 
+        onBack={() => setCurrentPage("home")}
+        onGoToSignup={() => setCurrentPage("signup")}
+      />
+    );
+  }
+
+  if (currentPage === "signup") {
+    return (
+      <SignupPage 
+        onBack={() => setCurrentPage("home")}
+        onGoToLogin={() => setCurrentPage("login")}
+      />
+    );
   }
 
   return (
@@ -17,7 +34,7 @@ const App: React.FC = () => {
         AI-powered school monitoring features will appear here
       </div>
 
-      <button onClick={() => setShowLogin(true)}>Launch System</button>
+      <button onClick={() => setCurrentPage("login")}>Launch System</button>
     </div>
   );
 };
