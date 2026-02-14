@@ -7,6 +7,7 @@ import StudentModule from "./StudentModule";
 import TeacherModule from "./TeacherModule";
 import ClassModule from "./ClassModule";
 import SubjectModule from "./SubjectModule";
+import AttendanceModule from "./AttendanceModule";
 
 type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "subjects" | "attendance" | "reports" | "settings";
 
@@ -96,6 +97,14 @@ const App: React.FC = () => {
   if (currentPage === "subjects") {
     return (
       <SubjectModule 
+        onBack={() => setCurrentPage("dashboard")}
+      />
+    );
+  }
+
+  if (currentPage === "attendance") {
+    return (
+      <AttendanceModule 
         onBack={() => setCurrentPage("dashboard")}
       />
     );
