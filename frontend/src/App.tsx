@@ -3,8 +3,9 @@ import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
 import WelcomePage from "./WelcomePage";
 import Dashboard from "./Dashboard";
+import StudentModule from "./StudentModule";
 
-type PageType = "home" | "login" | "signup" | "welcome" | "dashboard";
+type PageType = "home" | "login" | "signup" | "welcome" | "dashboard" | "students" | "teachers" | "classes" | "attendance" | "reports" | "settings";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
@@ -60,6 +61,15 @@ const App: React.FC = () => {
     return (
       <Dashboard 
         onLogout={() => setCurrentPage("home")}
+        onNavigate={(module) => setCurrentPage(module as PageType)}
+      />
+    );
+  }
+
+  if (currentPage === "students") {
+    return (
+      <StudentModule 
+        onBack={() => setCurrentPage("dashboard")}
       />
     );
   }

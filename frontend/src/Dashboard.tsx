@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 interface DashboardProps {
   onLogout: () => void;
+  onNavigate: (module: string) => void;
 }
 
 interface UserData {
@@ -11,8 +12,9 @@ interface UserData {
   mobileNo: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, onNavigate }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [activeMenu, setActiveMenu] = useState("dashboard");
 
   useEffect(() => {
     // Get user data from localStorage
@@ -46,25 +48,64 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <div className="dashboard-content">
         <div className="sidebar">
           <ul className="menu-list">
-            <li className="menu-item active">
+            <li 
+              className={`menu-item ${activeMenu === "dashboard" ? "active" : ""}`}
+              onClick={() => setActiveMenu("dashboard")}
+            >
               <span>📊 Dashboard</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "students" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("students");
+                onNavigate("students");
+              }}
+            >
               <span>👥 Students</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "teachers" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("teachers");
+                onNavigate("teachers");
+              }}
+            >
               <span>👨‍🏫 Teachers</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "classes" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("classes");
+                onNavigate("classes");
+              }}
+            >
               <span>📚 Classes</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "attendance" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("attendance");
+                onNavigate("attendance");
+              }}
+            >
               <span>📅 Attendance</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "reports" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("reports");
+                onNavigate("reports");
+              }}
+            >
               <span>📈 Reports</span>
             </li>
-            <li className="menu-item">
+            <li 
+              className={`menu-item ${activeMenu === "settings" ? "active" : ""}`}
+              onClick={() => {
+                setActiveMenu("settings");
+                onNavigate("settings");
+              }}
+            >
               <span>⚙️ Settings</span>
             </li>
           </ul>
