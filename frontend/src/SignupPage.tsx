@@ -3,9 +3,10 @@ import React, { useState } from "react";
 interface SignupPageProps {
   onBack: () => void;
   onGoToLogin: () => void;
+  onSignupSuccess: () => void;
 }
 
-const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin }) => {
+const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin, onSignupSuccess }) => {
   const [fullName, setFullName] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,21 +45,27 @@ const SignupPage: React.FC<SignupPageProps> = ({ onBack, onGoToLogin }) => {
       return;
     }
 
-    // Here you would typically send data to backend
-    console.log("Signup attempt with:", {
+    // Save to localStorage
+    const userData = {
       fullName,
       organizationName,
       email,
       mobileNo,
       password,
-    });
-    alert("Account created successfully! (Demo mode)");
+    };
+    localStorage.setItem("userSignupData", JSON.stringify(userData));
+
+    console.log("Signup successful with:", userData);
+    
+    // Reset form and navigate to welcome page
     setFullName("");
     setOrganizationName("");
     setEmail("");
     setMobileNo("");
     setPassword("");
     setConfirmPassword("");
+    
+    onSignupSuccess();
   };
 
   return (

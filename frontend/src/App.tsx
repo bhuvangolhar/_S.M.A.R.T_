@@ -1,8 +1,9 @@
 import { useState } from "react";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
+import WelcomePage from "./WelcomePage";
 
-type PageType = "home" | "login" | "signup";
+type PageType = "home" | "login" | "signup" | "welcome";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<PageType>("home");
@@ -21,6 +22,15 @@ const App: React.FC = () => {
       <SignupPage 
         onBack={() => setCurrentPage("home")}
         onGoToLogin={() => setCurrentPage("login")}
+        onSignupSuccess={() => setCurrentPage("welcome")}
+      />
+    );
+  }
+
+  if (currentPage === "welcome") {
+    return (
+      <WelcomePage 
+        onLogout={() => setCurrentPage("home")}
       />
     );
   }
